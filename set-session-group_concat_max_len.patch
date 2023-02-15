@@ -1,0 +1,31 @@
+From 25848978334f9682f0b4712bf9d7c8222bab606f Mon Sep 17 00:00:00 2001
+From: Elena Stepanova <elenst@montyprogram.com>
+Date: Wed, 19 Oct 2016 03:02:13 +0300
+Subject: [PATCH] MDEV-11082 mysql_client_test: test_ps_query_cache fails with
+ group-concat-max-len=1M
+
+test_bug14169 was setting session group_concat_max_len=1024 and
+did not clean it up. Because of that test_ps_query_cache, when run
+with group-concat-max-len != 1024, had different values in connections,
+and was inserting into query cache when a hit was expected.
+
+Fixed by adding a clean-up for the value in test_bug14169
+---
+ testclients/mysql_client_test.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/testclients/mysql_client_test.c b/testclients/mysql_client_test.c
+index b95127f954fd..ad8933118ccf 100644
+--- a/testclients/mysql_client_test.c
++++ b/testclients/mysql_client_test.c
+@@ -15375,6 +15375,9 @@ static void test_bug14169()
+
+   rc= mysql_query(mysql, "drop table t1");
+   myquery(rc);
++
++  rc= mysql_query(mysql, "set session group_concat_max_len=@@global.group_concat_max_len");
++  myquery(rc);
+ }
+ 
+ /*
+
